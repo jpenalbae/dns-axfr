@@ -46,3 +46,82 @@ dns.resolve4('www.google.com', function (err, addresses) {
 });
 ```
 
+## Sample results
+```javascript
+{
+    questions: [
+        {
+            name: 'acme.es.',
+            type: 'AXFR'
+        }
+    ],
+    answers: [
+        {
+            name: 'acme.es.',
+            type: 'SOA',
+            ttl: 21600,
+            dns: 'ns1.acme.es.',
+            mail: 'root.ns1.acme.es.',
+            serial: 2015012401,
+            refresInterval: 14400,
+            retryInterval: 7200,
+            expireLimit: 2592000,
+            minTTL: 28800
+        },
+        {
+            name: 'acme.es.',
+            type: 'A',
+            ttl: 21600,
+            a: '127.0.2.22'
+        },
+        {
+            name: 'acme.es.',
+            type: 'NS',
+            ttl: 21600,
+            ns: 'ns1.acme.es.'
+        },
+        {
+            name: 'acme.es.',
+            type: 'NS',
+            ttl: 21600,
+            ns: 'ns2.acme.es.'
+        },
+        {
+            name: 'subdomain.acme.es.',
+            type: 'NS',
+            ttl: 21600,
+            ns: 'ns1.acme.es.'
+        },
+        {
+            name: 'subdomain.acme.es.',
+            type: 'NS',
+            ttl: 21600,
+            ns: 'ns2.acme.es.'
+        },
+        {
+            name: 'ns1.acme.es.',
+            type: 'A',
+            ttl: 21600,
+            a: '127.0.2.69'
+        },
+        {
+            name: 'ns2.acme.es.',
+            type: 'A',
+            ttl: 21600,
+            a: '127.0.2.70'
+        },
+        {
+            name: 'test.acme.es.',
+            type: 'CNAME',
+            ttl: 21600,
+            cname: 'www.acme.com.'
+        },
+        {
+            name: 'www.acme.es.',
+            type: 'A',
+            ttl: 21600,
+            a: '127.0.2.22'
+        }
+    ]
+}
+```
