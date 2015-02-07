@@ -64,9 +64,9 @@ function decompressLabel(data, offset) {
 function parseResponse(response) {
 
     var offset = 14;
-    var entry, tentry, tchild = {};
+    var entry, tentry = {};
     var table = [];
-    var rclass, ttl, rlen, ip, pref, txt;
+    var rclass, rlen;
     var len = response.readUInt16BE(0);
 
     var result = { questions: [], answers: [] };
@@ -83,23 +83,14 @@ function parseResponse(response) {
     if ((response[5] & 0x0F) != 0)
         return -3;
 
-
     var questions = response.readUInt16BE(6);
     var answers = response.readUInt16BE(8);
     var authRRs = response.readUInt16BE(10);
     var aditRRs = response.readUInt16BE(12);
 
-    /*
-    console.log('questions: ' + questions);
-    console.log('answers: ' + answers);
-    console.log('authRRs: ' + authRRs);
-    console.log('aditRRs: ' + aditRRs); */
-
-
     /* Parse queries */
     for (var x = 0; x < questions; x++) {
         entry = decompressLabel(response, offset);
-        //console.log('entry: ' + entry.name);
         
         result.questions.push({
             name: entry.name,
@@ -112,22 +103,18 @@ function parseResponse(response) {
 
     /* Parse answers */
     for (var x = 0; x < answers; x++) {
+        entry = tentry = {};
+
+        /* Parse entry label */
         entry = decompressLabel(response, offset);
-        //console.log('[+] entry: ' + entry.name);
         offset = entry.next;
+        entry.name = entry.name;
 
-        tentry = tchild = {};
-        tentry.name = entry.name;
-
-        //console.log('offset2: ' + offset);
-
-        tentry.type = response.readUInt16BE(offset);
+        /* Get fields after label */
+        entry.type = response.readUInt16BE(offset);
         rclass = response.readUInt16BE(offset+2);
-        ttl = response.readUInt32BE(offset+4);
+        entry.ttl = response.readUInt32BE(offset+4);
         rlen = response.readUInt16BE(offset+8);
-
-        //console.log('tentry.len: ' + tentry.rlen);
-
 
         /* Skip classes != INET */
         if (rclass != 0x01) {
@@ -136,74 +123,57 @@ function parseResponse(response) {
         }
 
         /* Parse answer rdata */
-        switch (tentry.type) {
+        switch (entry.type) {
             /* A Record */
             case 0x01:
-                tentry.type = 'A';
-                tentry.a = inet_ntoa(response.readUInt32BE(offset+10));
-                //console.log('  - A: ' + inet_ntoa(ip));
+                entry.type = 'A';
+                entry.a = inet_ntoa(response.readUInt32BE(offset+10));
                 break;
 
             /* NS Record */
             case 0x02:
-                tentry.type = 'NS';
-                tentry.ns = decompressLabel(response, (offset + 10)).name;
-                //console.log('  - NS: ' + entry.name);
+                entry.type = 'NS';
+                entry.ns = decompressLabel(response, (offset + 10)).name;
                 break;
 
             /* CNAME Record */
             case 0x05:
-                tentry.type = 'CNAME';
-                tentry.cname = decompressLabel(response, (offset + 10)).name;
-                //console.log('  - CNAME: ' + entry.name);
+                entry.type = 'CNAME';
+                entry.cname = decompressLabel(response, (offset + 10)).name;
                 break;
 
             /* SOA Record */
             case 0x06:
-                tentry.type = 'SOA';
-                tchild = decompressLabel(response, (offset + 10));
-                tentry.dns = tchild.name;
-                tchild = decompressLabel(response, (tchild.next));
-                tentry.mail = tchild.name;
-                tentry.serial = response.readUInt32BE(tchild.next);
-                tentry.refresInterval = response.readUInt32BE(tchild.next+4);
-                tentry.retryInterval = response.readUInt32BE(tchild.next+8);
-                tentry.expireLimit = response.readUInt32BE(tchild.next+12);
-                tentry.minTTL = response.readUInt32BE(tchild.next+16);
+                entry.type = 'SOA';
+                tentry = decompressLabel(response, (offset + 10));
+                entry.dns = tentry.name;
+                tentry = decompressLabel(response, (tentry.next));
+                entry.mail = tentry.name;
+                entry.serial = response.readUInt32BE(tentry.next);
+                entry.refresInterval = response.readUInt32BE(tentry.next+4);
+                entry.retryInterval = response.readUInt32BE(tentry.next+8);
+                entry.expireLimit = response.readUInt32BE(tentry.next+12);
+                entry.minTTL = response.readUInt32BE(tentry.next+16);
                 break;
 
             /* MX Record */
             case 0x0f:
-                tentry.type = 'MX';
-                tentry.pref = response.readUInt16BE(offset+10);
-                tentry.mx = decompressLabel(response, (offset + 12)).name;
-                //console.log('  - MX ' + pref  + ': ' + entry.name);
+                entry.type = 'MX';
+                entry.pref = response.readUInt16BE(offset+10);
+                entry.mx = decompressLabel(response, (offset + 12)).name;
                 break;
 
             /* TXT Record */
             case 0x10:
-                tentry.type = 'TXT';
+                entry.type = 'TXT';
                 len = response[offset+10];
-                tentry.txt = response.toString('utf8', offset+11, offset+11+len);
-                //console.log('  - TXT: ' + txt);
+                entry.txt = response.toString('utf8', offset+11, offset+11+len);
                 break;
         }
 
-        result.answers.push(tentry);
-
-
+        result.answers.push(entry);
         offset += rlen + 10;
-        
-
-        //console.log('new offset: ' + offset);
     };
-
-    //console.log('offset: ' + offset);
-    //var temp = response.slice(offset, offset + 8);
-    //console.log(util.inspect(temp));
-
-    //console.log(util.inspect(result));
-    //console.log('ok');
     
     return result;
 }
@@ -214,46 +184,39 @@ dns.resolveAxfr = function(server, domain, callback) {
     var buffers = [];
     var split = domain.split('.');
 
+    /* Build the request */
     buffers.push(new Buffer(axfrReqProloge, 'binary'));
-
     split.forEach(function(elem) {
         var label = new Buffer('\00' + elem, 'utf8');
         label.writeUInt8(elem.length, 0);
         buffers.push(label);
     });
-
     buffers.push(new Buffer(axfrReqEpiloge, 'binary'));
-
     var buffer = Buffer.concat(buffers);
 
     /* Set size and transaction ID */
     buffer.writeUInt16BE(buffer.length - 2, 0);
     buffer.writeUInt16BE(Math.floor((Math.random() * 65535) + 1) , 2);
 
+    /* Connect and send request */
     var socket = net.connect(53, server, function(arguments) {
-        //console.log("Connected")
         socket.write(buffer.toString('binary'), 'binary');
     });
 
+    /* Parse response */
     socket.on('data', function(data) {
-        //console.log(util.inspect(data));
-        //console.log(data.toString());
         var res = parseResponse(data);
         socket.end();
 
         if (typeof res === 'object')
             callback(0, res);
         else
-            callback(res, null);
+            callback(res, "Error on response");
     });
 
-    /*
-    socket.on('end', function() {
-        console.log("Connection closed");
-    }); */
-
-    //console.log(util.inspect(buffer));
-    //console.log(util.inspect(buffers));
+    socket.on('error', function() {
+        callback(-4, "Error connecting");
+    });
 
 };
 

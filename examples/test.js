@@ -3,7 +3,7 @@ var util = require('util');
 
 dns.resolveAxfr('dns01.acme.com', 'acme.com', function(err, addr) {
     if (err) {
-        console.error('Error ocurred: ' + err);
+        console.error('Error ocurred: ' + addr + ' (' + err + ')');
         return;
     }
 
