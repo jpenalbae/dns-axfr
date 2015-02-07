@@ -171,6 +171,8 @@ function parseResponse(response) {
                 break;
         }
 
+        delete entry.len;
+        delete entry.next;
         result.answers.push(entry);
         offset += rlen + 10;
     };
