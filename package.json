@@ -1,21 +1,34 @@
 {
   "name": "dns-axfr",
-  "version": "0.0.1",
+  "version": "0.1.1",
   "description": "Extends dns module with axfr query type ",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jpenalbae/dns-axfr.git"
   },
+ "files": [
+    "README.md",
+    "LICENSE"
+    "index.js",
+    "examples/"
+  ],
   "keywords": [
     "dns",
     "axfr",
     "domain",
     "zone",
-    "transfer"
+    "transfer",
+    "pentest",
+    "pentesting"
   ],
   "author": {
     "name": "Jaime Peñalba",
     "email": "jpenalbae@gmail.com"
   },
-  "license": "LGPL-3.0"
+  "license": "LGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/jpenalbae/dns-axfr/issues"
+  },
+  "homepage": "https://github.com/jpenalbae/dns-axfr"
 }
