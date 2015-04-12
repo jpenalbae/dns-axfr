@@ -185,6 +185,8 @@ dns.resolveAxfr = function(server, domain, callback) {
 
     var buffers = [];
     var split = domain.split('.');
+    var responses = [];
+    var len = 0;
 
     /* Build the request */
     buffers.push(new Buffer(axfrReqProloge, 'binary'));
@@ -207,13 +209,35 @@ dns.resolveAxfr = function(server, domain, callback) {
 
     /* Parse response */
     socket.on('data', function(data) {
-        var res = parseResponse(data);
-        socket.end();
+        var tlen = 0;
 
-        if (typeof res === 'object')
-            callback(0, res);
-        else
-            callback(res, "Error on response");
+        if (len === 0)
+            len = data.readUInt16BE(0);
+
+        /* Save response buffers till length is reached */
+        responses.push(data);
+        for (var x = responses.length - 1; x >= 0; x--)
+            tlen += responses[x].length
+
+        /* Check if response is complete */
+        if (tlen === (len +2)) {
+            len = 0;
+
+            /* Concat the buffers */
+            var buf = new Buffer(tlen);
+            for (var x = 0; x < responses.length; x++) {
+                responses[x].copy(buf, len);
+                len += responses[x].length;
+            }
+
+            var res = parseResponse(buf);
+            socket.end();
+
+            if (typeof res === 'object')
+                callback(0, res);
+            else
+                callback(res, "Error on response");
+        }
     });
 
     socket.on('error', function() {
