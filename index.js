@@ -187,6 +187,7 @@ dns.resolveAxfr = function(server, domain, callback) {
     var split = domain.split('.');
     var responses = [];
     var len = 0;
+    var tlen = 0;
 
     /* Build the request */
     buffers.push(new Buffer(axfrReqProloge, 'binary'));
@@ -209,15 +210,14 @@ dns.resolveAxfr = function(server, domain, callback) {
 
     /* Parse response */
     socket.on('data', function(data) {
-        var tlen = 0;
-
+        
+        /* Get expected response length */
         if (len === 0)
             len = data.readUInt16BE(0);
 
         /* Save response buffers till length is reached */
         responses.push(data);
-        for (var x = responses.length - 1; x >= 0; x--)
-            tlen += responses[x].length
+        tlen += data.length;
 
         /* Check if response is complete */
         if (tlen === (len +2)) {
