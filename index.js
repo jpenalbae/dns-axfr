@@ -55,21 +55,18 @@ function decompressLabel(data, offset) {
     }
 
     res.next = loffset + 1;
-    //console.log(res.name);
 
     return res;
 }
 
 
-function parseResponse(response) {
+function parseResponse(response, result) {
 
     var offset = 14;
     var entry, tentry = {};
     var table = [];
     var rclass, rlen;
     var len = response.readUInt16BE(0);
-
-    var result = { questions: [], answers: [] };
 
     /* Check for valid length */
     if (response.length != (len + 2))
@@ -185,7 +182,9 @@ dns.resolveAxfr = function(server, domain, callback) {
 
     var buffers = [];
     var split = domain.split('.');
+    var results = { questions: [], answers: [] };
     var responses = [];
+    var buff = null;
     var len = 0;
     var tlen = 0;
 
@@ -206,6 +205,7 @@ dns.resolveAxfr = function(server, domain, callback) {
     /* Connect and send request */
     var socket = net.connect(53, server, function(arguments) {
         socket.write(buffer.toString('binary'), 'binary');
+        socket.end();
     });
 
     /* Parse response */
@@ -219,25 +219,37 @@ dns.resolveAxfr = function(server, domain, callback) {
         responses.push(data);
         tlen += data.length;
 
-        /* Check if response is complete */
-        if (tlen === (len +2)) {
-            len = 0;
+        /* Check if we have a complete response */
+        if (tlen >= (len +2)) {
 
-            /* Concat the buffers */
-            var buf = new Buffer(tlen);
-            for (var x = 0; x < responses.length; x++) {
-                responses[x].copy(buf, len);
-                len += responses[x].length;
-            }
+            /* Concat the buffers & parse response*/
+            buf = Buffer.concat(responses, tlen);
+            var tmpBuf = buf.slice(0, (len + 2));
+            var res = parseResponse(tmpBuf, results);
 
-            var res = parseResponse(buf);
-            socket.end();
-
-            if (typeof res === 'object')
-                callback(0, res);
-            else
+            if (typeof res !== 'object') {
+                socket.destroy();
                 callback(res, "Error on response");
+            }
         }
+
+        /* Check if response was larger than expected */
+        if (tlen > (len+2)) {
+
+            /* Start a new dns response with the remaining data */
+            var tmpBuf = buf.slice(len + 2);
+
+            len = tmpBuf.readUInt16BE(0);
+            tlen = tmpBuf.length;
+
+            responses = [];
+            responses.push(tmpBuf);
+        }
+
+    });
+
+    socket.on('end', function() {
+        callback(0, results);
     });
 
     socket.on('error', function() {
