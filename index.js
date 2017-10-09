@@ -1,5 +1,6 @@
 var dns = require('dns');
 var net = require('net');
+var ip  = require('ipaddr.js');
 
 
 var axfrReqProloge = 
@@ -166,6 +167,29 @@ function parseResponse(response, result) {
                 len = response[offset+10];
                 entry.txt = response.toString('utf8', offset+11, offset+11+len);
                 break;
+
+            /* AAAA Record */
+            case 0x1c:
+                entry.type = 'AAAA';
+                var byteArr = new Uint8Array(response.slice(offset+10, offset+26));
+                entry.aaaa = ip.fromByteArray(byteArr).toString;
+                break;
+
+            /* SPF Record */
+            case 0x63:
+                entry.type = 'SPF';
+                len = response[offset+10];
+                entry.txt = response.toString('utf8', offset+11, offset+11+len);
+                break;
+
+            /* SRV Record */
+            case 0x21:
+                entry.type = 'SRV';
+                entry.priority = response.readUInt16BE(offset+10);
+                entry.weight   = response.readUInt16BE(offset+12);
+                entry.port     = response.readUInt16BE(offset+14);
+                entry.target   = decompressLabel(response, (offset+16)).nam
+
         }
 
         delete entry.len;
