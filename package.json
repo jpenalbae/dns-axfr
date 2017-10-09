@@ -1,6 +1,6 @@
 {
   "name": "dns-axfr",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Extends dns module with axfr query type ",
   "main": "index.js",
   "repository": {
