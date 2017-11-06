@@ -3,6 +3,8 @@ var net = require('net');
 var ip  = require('ipaddr.js');
 
 
+var timeout = 0;
+
 var axfrReqProloge =
     "\x00\x00" +        /* Size */
     "\x00\x00" +        /* Transaction ID */
@@ -202,6 +204,10 @@ function parseResponse(response, result) {
 }
 
 
+dns.resolveAxfrTimeout = function(milis) {
+    timeout = milis;
+};
+
 dns.resolveAxfr = function(server, domain, callback) {
 
     var buffers = [];
@@ -231,6 +237,9 @@ dns.resolveAxfr = function(server, domain, callback) {
         socket.write(buffer.toString('binary'), 'binary');
         socket.end();
     });
+
+    if (timeout)
+        socket.setTimeout(timeout);
 
     /* Parse response */
     socket.on('data', function(data) {
@@ -270,6 +279,11 @@ dns.resolveAxfr = function(server, domain, callback) {
             responses.push(tmpBuf);
         }
 
+    });
+
+    socket.on('timeout', function() {
+        socket.destroy();
+        callback(-5, "Timeout");
     });
 
     socket.on('end', function() {

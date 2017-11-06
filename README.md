@@ -9,8 +9,13 @@ The following type of records are supported:
 * MX
 * NS
 * TXT
+* AAAA
+* SPF
+* SRV
 
 ## Usage
+
+In otder to perform an AXFR query use `resolveAxfr()`
 
 ### resolveAxfr(server, zone, callback)
 ```javascript
@@ -27,8 +32,28 @@ dns.resolveAxfr('dns01.acme.com', 'acme.com', function(err, addr) {
 });
 ```
 
+If you need to setup a timeout for the request use `resolveAxfrTimeout()` and set the desired timeout in milliseconds.
 
-As it extends the core dns module, you can access the original module without "requiring" it again:
+### resolveAxfrTimeout(timeout)
+```javascript
+var dns = require('dns-axfr');
+var util = require('util');
+
+dns.resolveAxfrTimeout(1000);
+
+dns.resolveAxfr('dns01.acme.com', 'acme.com', function(err, addr) {
+    if (err) {
+        console.error('Error ocurred: ' + addr + ' (' + err + ')');
+        return;
+    }
+
+    console.log(util.inspect(addr));
+});
+```
+
+
+
+As this module extends the core dns module, you can access the original module without "requiring" it again:
 ```javascript
 var dns = require('dns-axfr');
 var util = require('util');
