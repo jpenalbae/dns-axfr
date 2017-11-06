@@ -3,7 +3,7 @@ var net = require('net');
 var ip  = require('ipaddr.js');
 
 
-var axfrReqProloge = 
+var axfrReqProloge =
     "\x00\x00" +        /* Size */
     "\x00\x00" +        /* Transaction ID */
     "\x00\x20" +        /* Flags: Standard Query */
@@ -89,7 +89,7 @@ function parseResponse(response, result) {
     /* Parse queries */
     for (var x = 0; x < questions; x++) {
         entry = decompressLabel(response, offset);
-        
+
         result.questions.push({
             name: entry.name,
             type: 'AXFR'
@@ -172,7 +172,7 @@ function parseResponse(response, result) {
             case 0x1c:
                 entry.type = 'AAAA';
                 var byteArr = new Uint8Array(response.slice(offset+10, offset+26));
-                entry.aaaa = ip.fromByteArray(byteArr).toString;
+                entry.aaaa = ip.fromByteArray(byteArr).toString();
                 break;
 
             /* SPF Record */
@@ -188,7 +188,7 @@ function parseResponse(response, result) {
                 entry.priority = response.readUInt16BE(offset+10);
                 entry.weight   = response.readUInt16BE(offset+12);
                 entry.port     = response.readUInt16BE(offset+14);
-                entry.target   = decompressLabel(response, (offset+16)).nam
+                entry.target   = decompressLabel(response, (offset+16)).name
 
         }
 
@@ -197,7 +197,7 @@ function parseResponse(response, result) {
         result.answers.push(entry);
         offset += rlen + 10;
     };
-    
+
     return result;
 }
 
@@ -234,7 +234,7 @@ dns.resolveAxfr = function(server, domain, callback) {
 
     /* Parse response */
     socket.on('data', function(data) {
-        
+
         /* Get expected response length */
         if (len === 0)
             len = data.readUInt16BE(0);
