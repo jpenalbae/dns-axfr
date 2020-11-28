@@ -220,13 +220,13 @@ dns.resolveAxfr = function(server, domain, callback) {
     var port = server.split(":", 2)[1] || 53;
 
     /* Build the request */
-    buffers.push(new Buffer(axfrReqProloge, 'binary'));
+    buffers.push(Buffer.from(axfrReqProloge, 'binary'));
     split.forEach(function(elem) {
-        var label = new Buffer('\00' + elem, 'utf8');
+        var label = Buffer.from('\00' + elem, 'utf8');
         label.writeUInt8(elem.length, 0);
         buffers.push(label);
     });
-    buffers.push(new Buffer(axfrReqEpiloge, 'binary'));
+    buffers.push(Buffer.from(axfrReqEpiloge, 'binary'));
     var buffer = Buffer.concat(buffers);
 
     /* Set size and transaction ID */
