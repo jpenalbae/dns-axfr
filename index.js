@@ -217,6 +217,8 @@ dns.resolveAxfr = function(server, domain, callback) {
     var buff = null;
     var len = 0;
     var tlen = 0;
+    var hostname = server.split(":")[0];
+    var port = server.split(":", 2)[1] || 53;
 
     /* Build the request */
     buffers.push(new Buffer(axfrReqProloge, 'binary'));
@@ -233,7 +235,7 @@ dns.resolveAxfr = function(server, domain, callback) {
     buffer.writeUInt16BE(Math.floor((Math.random() * 65535) + 1) , 2);
 
     /* Connect and send request */
-    var socket = net.connect(53, server, function(arguments) {
+    var socket = net.connect(port, hostname, function(arguments) {
         socket.write(buffer.toString('binary'), 'binary');
         socket.end();
     });
