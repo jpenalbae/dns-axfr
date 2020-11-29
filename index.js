@@ -214,7 +214,6 @@ dns.resolveAxfr = function(server, domain, callback) {
     var split = domain.split('.');
     var results = { questions: [], answers: [] };
     var responses = [];
-    var buff = null;
     var len = 0;
     var tlen = 0;
 
