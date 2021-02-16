@@ -163,6 +163,12 @@ function parseResponse(response, result) {
                 entry.mx = decompressLabel(response, (offset + 12)).name;
                 break;
 
+            /* PTR Record */
+            case 0x0c:
+                entry.type = 'PTR';
+                entry.dns = decompressLabel(response, (offset + 10)).name;
+                break;
+
             /* TXT Record */
             case 0x10:
                 entry.type = 'TXT';
